@@ -1,13 +1,54 @@
 import tkinter as tk
-import customtkinter as ctk
 from tkinter import ttk
 from tkinter import messagebox
+import customtkinter as ctk
 import secrets
 import string
 
 # Global Variable for Icon path
 # https://www.flaticon.com/free-icons/lock" Lock icons created by Pixel perfect - Flaticon
 ICON_PATH = 'icon.ico'
+
+
+# Slide Panel
+class SlidePanel(ctk.CTkFrame):
+    def __init__(self, parent, start_pos, end_pos, background_color):
+        super().__init__(parent, fg_color=background_color)
+
+        # General attributes
+        self.start_pos = start_pos
+        self.end_pos = end_pos
+        self.width = abs(start_pos - end_pos)
+
+        # Animation logic
+        self.pos = self.start_pos
+        self.in_start_pos = True  # Indicates, if the panel is in the starting position
+
+        # Layout
+        self.place(relx=self.start_pos, rely=0.9, relwidth=self.width, relheight=0.1)
+    
+    def animate(self):
+        if self.in_start_pos:
+            self.animate_forward()
+        else:
+            self.animate_backwards()
+
+    def animate_forward(self):
+        if self.pos > self.end_pos:
+            self.pos -= 0.01  # Setting the animation speed
+            self.place(relx=self.pos, rely=0.9, relwidth=self.width, relheight=0.1)
+            self.after(10, self.animate_forward)  # Delay for the animation
+        else:
+            self.in_start_pos = False
+            self.after(1000, self.animate_backwards)  # Waiting to start the backward animation
+
+    def animate_backwards(self):
+        if self.pos < self.start_pos:
+            self.pos += 0.01  # Setting the animation speed
+            self.place(relx=self.pos, rely=0.9, relwidth=self.width, relheight=0.1)
+            self.after(10, self.animate_backwards)  # Delay for the animation
+        else:
+            self.in_start_pos = True
 
 
 # Password add window
@@ -100,41 +141,113 @@ class PasswordManagerApp(ctk.CTk):
         # Custom tkinter settings
         ctk.set_appearance_mode("System")
         ctk.set_default_color_theme("blue")
+
+        # Main frame for the treeview and the buttons
+        self.main_frame = ctk.CTkFrame(self)
+        self.main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        # Left frame for the treeview
+        self.tree_frame = ctk.CTkFrame(self.main_frame)
+        self.tree_frame.pack(side='left', fill='both', expand=True)
+
+        # Creating the treeview in the left frame
+        self.tree = ttk.Treeview(self.tree_frame, columns=('Site', 'Username', 'Password'), show="headings")
+        self.tree.pack(side='left', fill='both', expand=True)
         
-        # List for the passwords
-        self.listbox = tk.Listbox(self)
-        self.listbox.pack(fill=tk.BOTH, expand=True)
+        # Setting treeview column names, and width
+        self.tree.heading('Site', text='Site')
+        self.tree.heading('Username', text='Username')
+        self.tree.heading('Password', text='Password')
+
+        # Treeview copy event bind for double click
+        self.tree.bind('<Double-1>', self.copy_to_clipboard)
+
+        # Right frame for the buttons
+        self.button_frame = ctk.CTkFrame(self.main_frame)
+        self.button_frame.pack(side='left', fill='y', padx=10)
         
-        # Buttons
-        add_button = ctk.CTkButton(self, text="Add a new password", command=self.open_add_password_dialog)
-        add_button.pack(fill=tk.X, pady=2)
+        # Creating the buttons in the right frame
+        self.add_button = ctk.CTkButton(self.button_frame, text="Add a new password", command=self.open_add_password_dialog)
+        self.add_button.pack(fill='x', pady=2)
         
-        show_button = ctk.CTkButton(self, text="Show password", command=self.show_password)
-        show_button.pack(fill=tk.X)
+        self.show_button = ctk.CTkButton(self.button_frame, text="Show password", command=self.show_password)
+        self.show_button.pack(fill='x', pady=2)
+
+        # Slide panel for the copy message
+        panel_bg_color = '#56fc82'
+        self.slide_panel = SlidePanel(self, 1.0, 0.7, panel_bg_color)
+        self.copy_message = ctk.CTkLabel(self.slide_panel, text='Entry copied successfully', fg_color=panel_bg_color).pack(expand=True, fill='both', padx=2, pady=10)
 
         # Calling mainloop
         self.mainloop()
         
+
     def open_add_password_dialog(self):
         dialog = AddPasswordDialog(self)
         self.wait_window(dialog)  # Wait for the password add window to close
 
         if dialog.result:
             site, password, username = dialog.result
-            self.accounts.append({'site': site, 'username': username, 'password': password})
+            self.accounts.append({'site': site, 'username': username, 'password': password, 'show_password': False})
             messagebox.showinfo("Info", "Account added")
-            self.update_listbox()
+            self.update_treeview()
         
-    def update_listbox(self):
-        self.listbox.delete(0, tk.END)
+
+    def update_treeview(self):
+        # Emptying treeview
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        
+        # Loading accounts
         for account in self.accounts:
-            self.listbox.insert(tk.END, account['site'])
+            # Checking, if we should show the password
+            if account['show_password']:
+                password_display = account['password']
+            else:
+                # Placeholders for password
+                password_display = '*' * len(account['password'])
             
+            self.tree.insert('', tk.END, values=(account['site'], account['username'], password_display))
+
+
+
+    def copy_to_clipboard(self, event):
+        # Detect which row and column
+        region = self.tree.identify("region", event.x, event.y)
+        if region == "cell":
+            row_id = self.tree.identify_row(event.y)
+            column_id = self.tree.identify_column(event.x)
+            selected_item = self.tree.item(row_id)
+            values = selected_item['values']
+            
+            # Choosen column index
+            column_index = int(column_id.replace('#', '')) - 1  # Format: '#1', '#2', etc
+
+            if column_index == 2:  # Password is the third column
+                # Finding the password by index
+                account_index = self.tree.index(row_id)  # Account list index
+                data_to_copy = self.accounts[account_index]['password']
+            else:
+                # Copy the selected column value, if it isn't the password
+                data_to_copy = values[column_index]
+            
+            # Copy the selected item to clipboard
+            self.clipboard_clear()
+            self.clipboard_append(data_to_copy)
+            self.slide_panel.animate()
+
+                
+
     def show_password(self):
         try:
-            selection_index = self.listbox.curselection()[0] # Currently selected index
-            account = self.accounts[selection_index]  # Selected account dict
-            messagebox.showinfo(account['site'], f"Username/Email: {account['username']}\nPassword: {account['password']}")
+            selection_index = self.tree.selection()[0]  # Selected row index
+            account_index = self.tree.index(selection_index)  # Selected index in account list
+            
+            # Changing the show_password in the dict
+            self.accounts[account_index]['show_password'] = not self.accounts[account_index]['show_password']
+            
+            # Refresh the treeview for changes to take place
+            self.update_treeview()
         except IndexError:
             messagebox.showerror("Error", "Please select an entry from the list")
 
