@@ -56,7 +56,7 @@ class AddPasswordDialog(ctk.CTkToplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.iconbitmap(ICON_PATH)
-        self.title("Add a new password")
+        self.title("Add new account")
         self.geometry("300x230")
 
         # Make this window modal
@@ -167,7 +167,7 @@ class PasswordManagerApp(ctk.CTk):
         self.button_frame.pack(side='left', fill='y', padx=10)
         
         # Creating the buttons in the right frame
-        self.add_button = ctk.CTkButton(self.button_frame, text="Add a new password", command=self.open_add_password_dialog)
+        self.add_button = ctk.CTkButton(self.button_frame, text="Add new account", command=self.open_add_password_dialog)
         self.add_button.pack(fill='x', pady=2)
         
         self.show_button = ctk.CTkButton(self.button_frame, text="Show password", command=self.show_password)
