@@ -10,6 +10,38 @@ import string
 ICON_PATH = 'icon.ico'
 
 
+# ToolTip Panel
+class CTkToolTip(object):
+    def __init__(self, widget, text='widget info'):
+        self.widget = widget
+        self.text = text
+        self.tipwindow = None
+        self.id = None
+        self.x = self.y = 0
+
+        self.widget.bind("<Enter>", self.show_tip)
+        self.widget.bind("<Leave>", self.hide_tip)
+
+    def show_tip(self, event=None):
+        "Display text in tooltip window"
+        self.x, self.y, cx, cy = self.widget.bbox("insert")
+        self.x += self.widget.winfo_rootx() + 25
+        self.y += self.widget.winfo_rooty() + 20
+        # Creates a toplevel window
+        self.tipwindow = tk.Toplevel(self.widget)
+        self.tipwindow.wm_overrideredirect(True)
+        self.tipwindow.wm_geometry("+%d+%d" % (self.x, self.y))
+        label = tk.Label(self.tipwindow, text=self.text, justify=tk.LEFT,
+                         background="#ffffe0", relief=tk.SOLID, borderwidth=1,
+                         font=("tahoma", "8", "normal"))
+        label.pack(ipadx=1)
+
+    def hide_tip(self, event=None):
+        if self.tipwindow:
+            self.tipwindow.destroy()
+        self.tipwindow = None
+
+
 # Slide Panel
 class SlidePanel(ctk.CTkFrame):
     def __init__(self, parent, start_pos, end_pos, background_color):
@@ -57,38 +89,51 @@ class AddPasswordDialog(ctk.CTkToplevel):
         super().__init__(parent)
         self.iconbitmap(ICON_PATH)
         self.title("Add new account")
-        self.geometry("300x230")
+        self.geometry("400x230")  # Méret módosítása a további tér biztosításához
 
         # Make this window modal
-        self.transient(parent)  # Set to be the transient window of the parent
-        self.grab_set()  # Grab all events
-        self.focus_force()  # Force focus on this window
+        self.transient(parent)
+        self.grab_set()
+        self.focus_force()
 
-        # Widgets
+        # Entry fields container
+        entry_container = ctk.CTkFrame(self)
+        entry_container.pack(pady=10, padx=10, fill='both', expand=True)
+
         # Site entry
-        self.site_entry = ctk.CTkEntry(self, placeholder_text="Page name:")
-        self.site_entry.pack(pady=4)
+        self.site_entry = ctk.CTkEntry(entry_container, placeholder_text="Page name:")
+        self.site_entry.pack(pady=4, fill='x')
 
         # Username and email entry
-        self.user_entry = ctk.CTkEntry(self, placeholder_text="Username or email:")
-        self.user_entry.pack(pady=4)
+        self.user_entry = ctk.CTkEntry(entry_container, placeholder_text="Username or email:")
+        self.user_entry.pack(pady=4, fill='x')
+
+        # Password entry and buttons container
+        self.password_container = ctk.CTkFrame(entry_container)
+        self.password_container.pack(pady=4, fill='x')
 
         # Password entry
-        self.password_entry = ctk.CTkEntry(self, placeholder_text="Password", show="*")
-        self.password_entry.pack(pady=4)
-
-        # Submit button
-        submit_button = ctk.CTkButton(self, text="Add", command=self.submit)
-        submit_button.pack(pady=4)
+        self.password_entry = ctk.CTkEntry(self.password_container, placeholder_text="Password", show="*")
+        self.password_entry.pack(side='left', expand=True, fill='x')
 
         # Show password button
-        self.show_password_button = ctk.CTkButton(self, text="Show Password", command=self.toggle_password_visibility)
-        self.show_password_button.pack(pady=4)
-
-        # Random password button
-        generate_password_button = ctk.CTkButton(self, text="Generate Random Password", command=self.generate_password)
-        generate_password_button.pack(pady=4)
+        show_pass_icon = tk.PhotoImage(file='resized_show.png')
+        self.show_password_button = ctk.CTkButton(self.password_container, text='', image=show_pass_icon, width=40, command=self.toggle_password_visibility)
+        self.show_password_button.image = show_pass_icon
+        self.show_password_button.pack(side='left', padx=2)
         self.is_password_shown = False # By default the password is hidden
+
+        # Random generate password button
+        generate_password_icon = tk.PhotoImage(file='resized_magic-wand.png')
+        self.generate_password_button = ctk.CTkButton(self.password_container, text='', image=generate_password_icon, width=40, command=self.generate_password)
+        self.generate_password_button.image = generate_password_icon
+        self.generate_password_button.pack(side='left', padx=2)
+        # Tooltip for the button
+        CTkToolTip(self.generate_password_button, "Generate 24 character long password")
+
+        # Submit button
+        self.submit_button = ctk.CTkButton(self, text="Add account", height=50, command=self.submit)
+        self.submit_button.pack(pady=4)
 
         self.result = None
 
@@ -100,11 +145,11 @@ class AddPasswordDialog(ctk.CTkToplevel):
     def toggle_password_visibility(self):
         if self.is_password_shown:
             self.password_entry.configure(show="*")
-            self.show_password_button.configure(text="Show Password")
+            self.show_password_button.configure(text='', image=tk.PhotoImage(file='resized_show.png'))
             self.is_password_shown = False
         else:
             self.password_entry.configure(show="")
-            self.show_password_button.configure(text="Hide Password")
+            self.show_password_button.configure(text='', image=tk.PhotoImage(file='resized_hide.png'))
             self.is_password_shown = True
 
     # Random password method
@@ -254,7 +299,7 @@ class PasswordManagerApp(ctk.CTk):
 
 
 # Functions
-def generate_random_password(length=20):
+def generate_random_password(length=24):
 
     # Possible characters: Letters, Numbers, Special characters
     characters = string.ascii_letters + string.digits + string.punctuation
