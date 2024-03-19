@@ -177,7 +177,7 @@ class PasswordManagerApp(ctk.CTk):
 
         super().__init__()
         self.title("Password Manager")
-        self.geometry('600x400')
+        self.geometry('700x450')
 
         self.iconbitmap(ICON_PATH)
         
@@ -198,6 +198,12 @@ class PasswordManagerApp(ctk.CTk):
         # Creating the treeview in the left frame
         self.tree = ttk.Treeview(self.tree_frame, columns=('Site', 'Username', 'Password'), show="headings")
         self.tree.pack(side='left', fill='both', expand=True)
+
+        # Setting the treeview style
+        self.treeview_style = ttk.Style()
+        self.treeview_style.configure("Treeview", rowheight=30)  # Setting the height for the rows
+        self.treeview_style.configure("Treeview.Heading", font=('Helvetica', 14))  # Header settings
+        self.treeview_style.configure("Treeview", font=('Helvetica', 13))  # Settings for treeview elements
         
         # Setting treeview column names, and width
         self.tree.heading('Site', text='Site')

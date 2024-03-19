@@ -1,3 +1,2 @@
 Delete entries
 Change password, username
-Bigger letters in treeview
