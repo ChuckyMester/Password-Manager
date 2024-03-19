@@ -10,6 +10,50 @@ import string
 ICON_PATH = 'icon.ico'
 
 
+# Edit panel
+class EditDialog(ctk.CTkToplevel):
+    def __init__(self, parent, item_values, item_id, update_callback):
+        super().__init__(parent)
+        self.title("Edit Account")
+        self.geometry("300x200")
+
+        self.parent = parent
+        self.item_id = item_id
+        self.update_callback = update_callback
+
+        # Item values: (site, username, password)
+        self.site, self.username, self.password = item_values
+        self.original_site = self.site
+        self.original_username = self.username
+
+        # Site entry (readonly)
+        self.site_entry = ctk.CTkEntry(self, placeholder_text="Page name:")
+        self.site_entry.insert(0, self.site)
+        self.site_entry.pack(pady=4)
+
+        # Username entry
+        self.username_entry = ctk.CTkEntry(self, placeholder_text="Username or email:")
+        self.username_entry.insert(0, self.username)
+        self.username_entry.pack(pady=4)
+
+        # Password entry
+        self.password_entry = ctk.CTkEntry(self, placeholder_text="Password:")
+        self.password_entry.insert(0, self.password)
+        self.password_entry.pack(pady=4)
+
+        # Update button
+        self.update_button = ctk.CTkButton(self, text="Update", command=self.update_account)
+        self.update_button.pack(pady=4)
+
+    def update_account(self):
+        # Itt frissítheted az adatokat az alkalmazásban vagy az adatbázisban
+        updated_site = self.site_entry.get()
+        updated_username = self.username_entry.get()
+        updated_password = self.password_entry.get()
+        self.update_callback(self.original_site, self.original_username, updated_site, updated_username, updated_password)
+        self.destroy()
+
+
 # ToolTip Panel
 class CTkToolTip(object):
     def __init__(self, widget, text='widget info'):
@@ -181,7 +225,8 @@ class PasswordManagerApp(ctk.CTk):
 
         self.iconbitmap(ICON_PATH)
         
-        self.accounts = []  # For storing data
+        self.file_name = 'accounts.txt'
+        self.accounts = self.load_accounts(self.file_name)  # For storing data
 
         # Custom tkinter settings
         ctk.set_appearance_mode("System")
@@ -218,16 +263,25 @@ class PasswordManagerApp(ctk.CTk):
         self.button_frame.pack(side='left', fill='y', padx=10)
         
         # Creating the buttons in the right frame
+        # Add button
         self.add_button = ctk.CTkButton(self.button_frame, text="Add new account", command=self.open_add_password_dialog)
         self.add_button.pack(fill='x', pady=2)
         
+        # Show password button
         self.show_button = ctk.CTkButton(self.button_frame, text="Show password", command=self.show_password)
         self.show_button.pack(fill='x', pady=2)
+
+        # Edit button
+        self.edit_button = ctk.CTkButton(self.button_frame, text="Edit account", command=self.open_edit_dialog)
+        self.edit_button.pack(fill='x', pady=2)
 
         # Slide panel for the copy message
         panel_bg_color = '#56fc82'
         self.slide_panel = SlidePanel(self, 1.0, 0.7, panel_bg_color)
         self.copy_message = ctk.CTkLabel(self.slide_panel, text='Entry copied successfully', fg_color=panel_bg_color).pack(expand=True, fill='both', padx=2, pady=10)
+
+        # Load the data from the txt
+        self.populate_treeview()
 
         # Calling mainloop
         self.mainloop()
@@ -240,8 +294,34 @@ class PasswordManagerApp(ctk.CTk):
         if dialog.result:
             site, password, username = dialog.result
             self.accounts.append({'site': site, 'username': username, 'password': password, 'show_password': False})
+            self.save_accounts(self.accounts, self.file_name)
             messagebox.showinfo("Info", "Account added")
             self.update_treeview()
+    
+
+    def open_edit_dialog(self):
+        selected_item = self.tree.selection()
+        if selected_item:
+            item_id = selected_item[0]
+            item_values = self.tree.item(selected_item, "values")
+            EditDialog(self, item_values, item_id, self.update_account_data)
+        else:
+            messagebox.showwarning("Warning", "Please select an item to edit.")
+
+    
+    def update_account_data(self, original_site, original_username, site, username, password):
+        for account in self.accounts:
+            if account['site'] == original_site and account['username'] == original_username:
+                account['site'] = site
+                account['username'] = username
+                account['password'] = password
+                break
+
+        # Az accounts lista frissítése a fájlban
+        self.save_accounts(self.accounts, "accounts.txt")
+        
+        # A Treeview frissítése
+        self.update_treeview()
         
 
     def update_treeview(self):
@@ -301,6 +381,33 @@ class PasswordManagerApp(ctk.CTk):
             self.update_treeview()
         except IndexError:
             messagebox.showerror("Error", "Please select an entry from the list")
+
+
+    def save_accounts(self, accounts, filename):
+        with open(filename, "w") as file:
+            for account in accounts:
+                file.write(f"{account['site']},{account['username']},{account['password']}\n")
+
+
+
+    def load_accounts(self, filename):
+        accounts = []
+        try:
+            with open(filename, "r") as file:
+                for line in file:
+                    site, username, password = line.strip().split(',')
+                    accounts.append({'site': site, 'username': username, 'password': password, 'show_password': False})
+        except FileNotFoundError:
+            print("File not found")
+        except Exception:
+            print("Something went wrong")
+        return accounts
+    
+
+    def populate_treeview(self):
+        # Adding the data to the treeview after init
+        for account in self.accounts:
+            self.tree.insert('', 'end', values=(account['site'], account['username'], '*' * len(account['password'])))
 
 
 
