@@ -12,17 +12,18 @@ ICON_PATH = 'icon.ico'
 
 # Edit panel
 class EditDialog(ctk.CTkToplevel):
-    def __init__(self, parent, item_values, item_id, update_callback):
+    def __init__(self, parent, site, username, password, update_callback):
         super().__init__(parent)
         self.title("Edit Account")
         self.geometry("300x200")
 
         self.parent = parent
-        self.item_id = item_id
         self.update_callback = update_callback
 
         # Item values: (site, username, password)
-        self.site, self.username, self.password = item_values
+        self.site = site
+        self.username = username
+        self.password =  password
         self.original_site = self.site
         self.original_username = self.username
 
@@ -46,7 +47,7 @@ class EditDialog(ctk.CTkToplevel):
         self.update_button.pack(pady=4)
 
     def update_account(self):
-        # Itt frissítheted az adatokat az alkalmazásban vagy az adatbázisban
+        # Getting the new data, and sending it to the update method in the main class
         updated_site = self.site_entry.get()
         updated_username = self.username_entry.get()
         updated_password = self.password_entry.get()
@@ -133,7 +134,7 @@ class AddPasswordDialog(ctk.CTkToplevel):
         super().__init__(parent)
         self.iconbitmap(ICON_PATH)
         self.title("Add new account")
-        self.geometry("400x230")  # Méret módosítása a további tér biztosításához
+        self.geometry("400x230") # Size
 
         # Make this window modal
         self.transient(parent)
@@ -302,9 +303,12 @@ class PasswordManagerApp(ctk.CTk):
     def open_edit_dialog(self):
         selected_item = self.tree.selection()
         if selected_item:
-            item_id = selected_item[0]
             item_values = self.tree.item(selected_item, "values")
-            EditDialog(self, item_values, item_id, self.update_account_data)
+            site, username, password = item_values
+            for account in self.accounts:
+                if account['site'] == site and account['username'] == username:
+                    password = account['password']
+            EditDialog(self, site, username, password, self.update_account_data)
         else:
             messagebox.showwarning("Warning", "Please select an item to edit.")
 
@@ -317,10 +321,10 @@ class PasswordManagerApp(ctk.CTk):
                 account['password'] = password
                 break
 
-        # Az accounts lista frissítése a fájlban
+        # Saving the accounts data in the file
         self.save_accounts(self.accounts, "accounts.txt")
         
-        # A Treeview frissítése
+        # Refreshing the treeview
         self.update_treeview()
         
 
@@ -414,8 +418,8 @@ class PasswordManagerApp(ctk.CTk):
 # Functions
 def generate_random_password(length=24):
 
-    # Possible characters: Letters, Numbers, Special characters
-    characters = string.ascii_letters + string.digits + string.punctuation
+    # Possible characters: Letters, Numbers, Special characters (Except ',' because of the csv)
+    characters = string.ascii_letters + string.digits + string.punctuation.replace(',', '@')
 
     # Choosing random characters from characters variable
     password = ''.join(secrets.choice(characters) for i in range(length))
