@@ -280,7 +280,7 @@ class PasswordManagerApp(ctk.CTk):
         
         # Creating the buttons in the right frame
         # Add button
-        self.add_button = ctk.CTkButton(self.button_frame, text="Add new account", command=self.open_add_password_dialog)
+        self.add_button = ctk.CTkButton(self.button_frame, text="Add new account",fg_color='#00B026', hover_color='#008C1E', command=self.open_add_password_dialog)
         self.add_button.pack(fill='x', pady=2)
         
         # Show password button
@@ -291,10 +291,19 @@ class PasswordManagerApp(ctk.CTk):
         self.edit_button = ctk.CTkButton(self.button_frame, text="Edit account", command=self.open_edit_dialog)
         self.edit_button.pack(fill='x', pady=2)
 
+        # Delete button
+        self.edit_button = ctk.CTkButton(self.button_frame, text="Delete account",fg_color='#D93033', hover_color='#910D0F', command=self.delete_account)
+        self.edit_button.pack(fill='x', pady=2)
+
         # Slide panel for the copy message
-        panel_bg_color = '#56fc82'
-        self.slide_panel = SlidePanel(self, 1.0, 0.7, panel_bg_color)
-        self.copy_message = ctk.CTkLabel(self.slide_panel, text='Entry copied successfully', fg_color=panel_bg_color).pack(expand=True, fill='both', padx=2, pady=10)
+        copy_panel_bg_color = '#00A621'
+        self.slide_panel = SlidePanel(self, 1.0, 0.7, copy_panel_bg_color)
+        self.copy_message = ctk.CTkLabel(self.slide_panel, text='Entry copied successfully', fg_color=copy_panel_bg_color, text_color='black').pack(expand=True, fill='both', padx=2, pady=10)
+
+        # Slide panel for the delete message
+        delete_panel_bg_color = '#B80003'
+        self.delete_panel = SlidePanel(self, 1.0, 0.7, delete_panel_bg_color)
+        self.delete_message = ctk.CTkLabel(self.delete_panel, text='Entry deleted succesfully', fg_color=delete_panel_bg_color, text_color='black').pack(expand=True, fill='both', padx=2, pady=10)
 
         # Load the data from the txt
         self.populate_treeview()
@@ -385,7 +394,6 @@ class PasswordManagerApp(ctk.CTk):
             self.clipboard_clear()
             self.clipboard_append(data_to_copy)
             self.slide_panel.animate()
-
                 
 
     def show_password(self):
@@ -400,6 +408,27 @@ class PasswordManagerApp(ctk.CTk):
             self.update_treeview()
         except IndexError:
             messagebox.showerror("Error", "Please select an entry from the list")
+
+
+    def delete_account(self):
+        selected_items = self.tree.selection()
+
+        if selected_items:
+            selected_item = selected_items[0] 
+            site, username, _ = self.tree.item(selected_item, 'values')
+            
+            for i, account in enumerate(self.accounts):
+                if account['site'] == site and account['username'] == username:
+                    del self.accounts[i]
+                    break
+
+            self.update_treeview()  
+            self.save_accounts(self.accounts, 'accounts.txt')
+
+            self.delete_panel.animate()
+        else:
+            messagebox.showerror("Error", "Please select an account")
+
 
 
     def save_accounts(self, accounts, filename):
