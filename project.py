@@ -413,19 +413,23 @@ class PasswordManagerApp(ctk.CTk):
     def delete_account(self):
         selected_items = self.tree.selection()
 
+        response = messagebox.askyesno("Confirm Delete", "Are you sure you want to delete the selected account?")
+
         if selected_items:
-            selected_item = selected_items[0] 
-            site, username, _ = self.tree.item(selected_item, 'values')
-            
-            for i, account in enumerate(self.accounts):
-                if account['site'] == site and account['username'] == username:
-                    del self.accounts[i]
-                    break
+                
+                if response:
+                    selected_item = selected_items[0] 
+                    site, username, _ = self.tree.item(selected_item, 'values')
+                    
+                    for i, account in enumerate(self.accounts):
+                        if account['site'] == site and account['username'] == username:
+                            del self.accounts[i]
+                            break
 
-            self.update_treeview()  
-            self.save_accounts(self.accounts, 'accounts.txt')
+                    self.update_treeview()  
+                    self.save_accounts(self.accounts, 'accounts.txt')
 
-            self.delete_panel.animate()
+                    self.delete_panel.animate()
         else:
             messagebox.showerror("Error", "Please select an account")
 
