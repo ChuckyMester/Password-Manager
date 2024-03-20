@@ -15,7 +15,7 @@ class EditDialog(ctk.CTkToplevel):
     def __init__(self, parent, site, username, password, update_callback):
         super().__init__(parent)
         self.title("Edit Account")
-        self.geometry("300x200")
+        self.geometry("400x170")
 
         self.parent = parent
         self.update_callback = update_callback
@@ -27,24 +27,39 @@ class EditDialog(ctk.CTkToplevel):
         self.original_site = self.site
         self.original_username = self.username
 
-        # Site entry (readonly)
+        # Általános padding
+        pad = {'padx': 5, 'pady': 5}
+
+        # Site entry
+        self.site_label = ctk.CTkLabel(self, text='Site:')
+        self.site_label.grid(row=0, column=0, sticky='e', **pad)
+
         self.site_entry = ctk.CTkEntry(self, placeholder_text="Page name:")
         self.site_entry.insert(0, self.site)
-        self.site_entry.pack(pady=4)
+        self.site_entry.grid(row=0, column=1, sticky='ew', **pad)
 
         # Username entry
+        self.username_label = ctk.CTkLabel(self, text='Username:')
+        self.username_label.grid(row=1, column=0, sticky='e', **pad)
+
         self.username_entry = ctk.CTkEntry(self, placeholder_text="Username or email:")
         self.username_entry.insert(0, self.username)
-        self.username_entry.pack(pady=4)
+        self.username_entry.grid(row=1, column=1, sticky='ew', **pad)
 
         # Password entry
+        self.password_label = ctk.CTkLabel(self, text='Password:')
+        self.password_label.grid(row=2, column=0, sticky='e', **pad)
+
         self.password_entry = ctk.CTkEntry(self, placeholder_text="Password:")
         self.password_entry.insert(0, self.password)
-        self.password_entry.pack(pady=4)
+        self.password_entry.grid(row=2, column=1, sticky='ew', **pad)
 
         # Update button
         self.update_button = ctk.CTkButton(self, text="Update", command=self.update_account)
-        self.update_button.pack(pady=4)
+        self.update_button.grid(row=3, column=0, columnspan=2, **pad)
+
+        # Ablak méretének és grid cellák szélességének beállítása
+        self.grid_columnconfigure(1, weight=1)
 
     def update_account(self):
         # Getting the new data, and sending it to the update method in the main class
