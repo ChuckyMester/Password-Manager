@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 # Global Variable for Icon path
 # https://www.flaticon.com/free-icons/lock" Lock icons created by Pixel perfect - Flaticon
-ICON_PATH = 'icon.ico'
+ICON_PATH = 'assets/icon.ico'
 FILE_PATH = 'db.data'
 
 
@@ -23,6 +23,7 @@ class LoginDialog(simpledialog.Dialog):
     def body(self, master):
         self.geometry('350x150')
         self.title('Login')
+        self.iconbitmap(ICON_PATH)
         login_frame = ttk.Frame(master)
         login_frame.pack(pady=25)
         tk.Label(login_frame, text="Password:", font=('Helvetica', 18)).grid(row=0)
@@ -38,6 +39,7 @@ class LoginDialog(simpledialog.Dialog):
 class EditDialog(ctk.CTkToplevel):
     def __init__(self, parent, site, username, password, update_callback):
         super().__init__(parent)
+        self.iconbitmap(ICON_PATH)
         self.title("Edit Account")
         self.geometry("400x170")
 
@@ -201,14 +203,14 @@ class AddPasswordDialog(ctk.CTkToplevel):
         self.password_entry.pack(side='left', expand=True, fill='x')
 
         # Show password button
-        show_pass_icon = tk.PhotoImage(file='resized_show.png')
+        show_pass_icon = tk.PhotoImage(file='assets/resized_show.png')
         self.show_password_button = ctk.CTkButton(self.password_container, text='', image=show_pass_icon, width=40, command=self.toggle_password_visibility)
         self.show_password_button.image = show_pass_icon
         self.show_password_button.pack(side='left', padx=2)
         self.is_password_shown = False # By default the password is hidden
 
         # Random generate password button
-        generate_password_icon = tk.PhotoImage(file='resized_magic-wand.png')
+        generate_password_icon = tk.PhotoImage(file='assets/resized_magic-wand.png')
         self.generate_password_button = ctk.CTkButton(self.password_container, text='', image=generate_password_icon, width=40, command=self.generate_password)
         self.generate_password_button.image = generate_password_icon
         self.generate_password_button.pack(side='left', padx=2)
@@ -229,11 +231,11 @@ class AddPasswordDialog(ctk.CTkToplevel):
     def toggle_password_visibility(self):
         if self.is_password_shown:
             self.password_entry.configure(show="*")
-            self.show_password_button.configure(text='', image=tk.PhotoImage(file='resized_show.png'))
+            self.show_password_button.configure(text='', image=tk.PhotoImage(file='assets/resized_show.png'))
             self.is_password_shown = False
         else:
             self.password_entry.configure(show="")
-            self.show_password_button.configure(text='', image=tk.PhotoImage(file='resized_hide.png'))
+            self.show_password_button.configure(text='', image=tk.PhotoImage(file='assets/resized_hide.png'))
             self.is_password_shown = True
 
     # Random password method
