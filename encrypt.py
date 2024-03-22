@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+from tkinter import simpledialog
 import customtkinter as ctk
 import secrets
 import string
@@ -14,6 +15,23 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 # Global Variable for Icon path
 # https://www.flaticon.com/free-icons/lock" Lock icons created by Pixel perfect - Flaticon
 ICON_PATH = 'icon.ico'
+FILE_PATH = 'db.data'
+
+
+# Login window at startup
+class LoginDialog(simpledialog.Dialog):
+    def body(self, master):
+        self.geometry('350x150')
+        self.title('Login')
+        login_frame = ttk.Frame(master)
+        login_frame.pack(pady=25)
+        tk.Label(login_frame, text="Password:", font=('Helvetica', 18)).grid(row=0)
+        self.password_entry = tk.Entry(login_frame, show='*', width=20, font=18)
+        self.password_entry.grid(row=0, column=1)
+        return self.password_entry
+
+    def apply(self):
+        self.result = self.password_entry.get()
 
 
 # Edit panel
@@ -241,17 +259,21 @@ class AddPasswordDialog(ctk.CTkToplevel):
 class PasswordManagerApp(ctk.CTk):
     def __init__(self):
 
-        super().__init__()
+        super().__init__()        
+
+        # Login window
+        login_dialog = LoginDialog(self)
+
         # Encryption
         self.encryptor = Encrypt()
-        self.encryption_password = "Password1234"
+        self.encryption_password = login_dialog.result
 
         self.title("Password Manager")
         self.geometry('700x450')
 
         self.iconbitmap(ICON_PATH)
         
-        self.file_name = 'accounts.txt'
+        self.file_name = FILE_PATH
         self.accounts = self.load_accounts(self.file_name)  # For storing data
 
         # Custom tkinter settings
@@ -356,7 +378,7 @@ class PasswordManagerApp(ctk.CTk):
                 break
 
         # Saving the accounts data in the file
-        self.save_accounts("accounts.txt")
+        self.save_accounts(FILE_PATH)
         
         # Refreshing the treeview
         self.update_treeview()
@@ -437,7 +459,7 @@ class PasswordManagerApp(ctk.CTk):
                             break
 
                     self.update_treeview()  
-                    self.save_accounts('accounts.txt')
+                    self.save_accounts(FILE_PATH)
 
                     self.delete_panel.animate()
         else:
@@ -446,11 +468,10 @@ class PasswordManagerApp(ctk.CTk):
 
 
     def save_accounts(self, filename):
-        # Ideiglenes fájlba mentjük az adatokat
         with open(filename, "w") as f:
             for account in self.accounts:
                 f.write(f"{account['site']},{account['username']},{account['password']}\n")
-        # A fájl titkosítása
+        # Encrypt the file
         self.encryptor.encrypt_file(filename, self.encryption_password)
 
 
@@ -467,10 +488,14 @@ class PasswordManagerApp(ctk.CTk):
                     site, username, password = line.strip().split(',')
                     accounts.append({'site': site, 'username': username, 'password': password, 'show_password': False})
             self.encryptor.encrypt_file(filename, self.encryption_password)
+        # If file not exists, we create it
         except FileNotFoundError:
-            print("File not found")
+            file_path = FILE_PATH
+            with open(file_path, 'x') as file:
+                pass
+        # Hibás jelszóná
         except Exception:
-            print("Something went wrong")
+            messagebox.showerror("Error", "Wrong password, access denied!")
         return accounts
     
 
@@ -478,6 +503,16 @@ class PasswordManagerApp(ctk.CTk):
         # Adding the data to the treeview after init
         for account in self.accounts:
             self.tree.insert('', 'end', values=(account['site'], account['username'], '*' * len(account['password'])))
+
+
+    def is_file_empty(self, file_path):
+        with open(file_path, 'r') as file:
+            first_char = file.read(1)
+            # Empty if we don't have any character to read
+            if not first_char:
+                return True
+            else:
+                return False
 
 
 # Encrypting
@@ -511,7 +546,7 @@ class Encrypt():
 
 
     def decrypt_file(self,filename: str, password: str):
-        """Decrypting file with the password"""
+        """Decrypting file with the"""
         with open(filename, 'rb') as file:
             salt = file.read(16)  # A só első 16 bájtja
             encrypted_data = file.read()
