@@ -54,7 +54,7 @@ class EditDialog(ctk.CTkToplevel):
         self.original_site = self.site
         self.original_username = self.username
 
-        # Általános padding
+        #padding
         pad = {'padx': 5, 'pady': 5}
 
         # Site entry
@@ -85,7 +85,7 @@ class EditDialog(ctk.CTkToplevel):
         self.update_button = ctk.CTkButton(self, text="Update", command=self.update_account)
         self.update_button.grid(row=3, column=0, columnspan=2, **pad)
 
-        # Ablak méretének és grid cellák szélességének beállítása
+        # Grid settings
         self.grid_columnconfigure(1, weight=1)
 
     def update_account(self):
@@ -141,7 +141,7 @@ class SlidePanel(ctk.CTkFrame):
 
         # Animation logic
         self.pos = self.start_pos
-        self.in_start_pos = True  # Indicates, if the panel is in the starting position
+        self.in_start_pos = True
 
         # Layout
         self.place(relx=self.start_pos, rely=0.9, relwidth=self.width, relheight=0.1)
@@ -154,18 +154,18 @@ class SlidePanel(ctk.CTkFrame):
 
     def animate_forward(self):
         if self.pos > self.end_pos:
-            self.pos -= 0.01  # Setting the animation speed
+            self.pos -= 0.01 
             self.place(relx=self.pos, rely=0.9, relwidth=self.width, relheight=0.1)
-            self.after(10, self.animate_forward)  # Delay for the animation
+            self.after(10, self.animate_forward)
         else:
             self.in_start_pos = False
-            self.after(1000, self.animate_backwards)  # Waiting to start the backward animation
+            self.after(1000, self.animate_backwards)
 
     def animate_backwards(self):
         if self.pos < self.start_pos:
-            self.pos += 0.01  # Setting the animation speed
+            self.pos += 0.01 
             self.place(relx=self.pos, rely=0.9, relwidth=self.width, relheight=0.1)
-            self.after(10, self.animate_backwards)  # Delay for the animation
+            self.after(10, self.animate_backwards) 
         else:
             self.in_start_pos = True
 
@@ -176,7 +176,7 @@ class AddPasswordDialog(ctk.CTkToplevel):
         super().__init__(parent)
         self.iconbitmap(ICON_PATH)
         self.title("Add new account")
-        self.geometry("400x230") # Size
+        self.geometry("400x230")
 
         # Make this window modal
         self.transient(parent)
@@ -208,7 +208,7 @@ class AddPasswordDialog(ctk.CTkToplevel):
         self.show_password_button = ctk.CTkButton(self.password_container, text='', image=show_pass_icon, width=40, command=self.toggle_password_visibility)
         self.show_password_button.image = show_pass_icon
         self.show_password_button.pack(side='left', padx=2)
-        self.is_password_shown = False # By default the password is hidden
+        self.is_password_shown = False #By default the password is hidden
 
         # Random generate password button
         generate_password_icon = tk.PhotoImage(file='assets/resized_magic-wand.png')
@@ -496,7 +496,7 @@ class PasswordManagerApp(ctk.CTk):
             file_path = FILE_PATH
             with open(file_path, 'x') as file:
                 pass
-        # Hibás jelszóná
+        # If the password is wrong
         except Exception:
             messagebox.showerror("Error", "Wrong password, access denied!")
             sys.exit()
@@ -546,13 +546,13 @@ class Encrypt():
         encrypted_data = fernet.encrypt(original_data)
         
         with open(filename, 'wb') as file:
-            file.write(salt + encrypted_data)  # A sót is tároljuk a fájlban
+            file.write(salt + encrypted_data)
 
 
     def decrypt_file(self,filename: str, password: str):
         """Decrypting file with the"""
         with open(filename, 'rb') as file:
-            salt = file.read(16)  # A só első 16 bájtja
+            salt = file.read(16)
             encrypted_data = file.read()
         
         key = self.derive_key(password.encode(), salt)
